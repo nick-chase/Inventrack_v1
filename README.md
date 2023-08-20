@@ -21,7 +21,7 @@ Framework: Built in Unity 2022.3.1f1
 Other Dependencies: (This SQLite needs Unity 2022.3.1f1)
 
 Getting Started
-Clone the repository: https://github.com/nick-chase/Inventrtack.git
+Clone the repository https://github.com/nick-chase/Inventrack_v1.git
 Install the required dependencies: Unity 2022.3.1f1
 Set up the database: The database is included at ../Assets/StreamingAssets/InventrackDBv3
 Run the application: File -> Build & Run -> This will create a folder with an executable called Inventrack_v1.
