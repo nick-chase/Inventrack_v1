@@ -1,7 +1,11 @@
 using System.Data;
 using System.IO;
+using UnityEngine.UI;
 using UnityEngine;
 using Mono.Data.Sqlite;  //Sqlite3 wrapper for .Net
+using System;
+using InventoryDTOs;
+using TMPro;
 
 /*
  * DatabaseManager.cs
@@ -13,8 +17,10 @@ public class DatabaseManager : MonoBehaviour
 {
     //create conenction and maintain filepath here for future name changes
     private IDbConnection _connection;
-    private string _databaseName; 
+    private string _databaseName = "InventrackDBv3.db"; // coded name for project 
 
+    public Transform contentPanel; // Drag and drop the Content transform of the ScrollRect in the inspector
+    public TMP_Text itemTemplate; // Drag and drop your Text template from the scene
     /*
      * Test for data base integrity
      * Filename is hardocded for initial testing and prototyping
@@ -23,7 +29,7 @@ public class DatabaseManager : MonoBehaviour
      */
     private void Awake()
     {
-        SetDatabaseName("InventrackDBv3.db"); //This name
+        
         string pathToDatabase = "URI=file:" + Application.dataPath + "/StreamingAssets/" + _databaseName;
         if(File.Exists(pathToDatabase))
         {
@@ -46,9 +52,6 @@ public class DatabaseManager : MonoBehaviour
         string connect = "URI=file:" + Application.dataPath + "/StreamingAssets/" + _databaseName;
         _connection = new SqliteConnection(connect);
         _connection.Open();
-
-        TestDB();
-        //throw new NotImplementedException();
     }
 
 
@@ -56,62 +59,101 @@ public class DatabaseManager : MonoBehaviour
      * Class TestDB()
      * Here the database connection is tested to verify  A) db file works, B) file is readable and has data.
      */
-    private void TestDB()
+    public void TestDB()
     {
-        IDbCommand command = _connection.CreateCommand();
-        command.CommandText = "SELECT Name FROM Item";
-        IDataReader reader = command.ExecuteReader();
-
-        // Iterate over the result and log each row
-        while (reader.Read())
+        ClearContentPanel(); // destroy content in panel
+        using (IDbCommand command = _connection.CreateCommand())
         {
-            string rowData = "";
-            for (int i = 0; i < reader.FieldCount; i++)
+            command.CommandText = "SELECT ItemName, Quantity FROM Item";
+            using (IDataReader reader = command.ExecuteReader())
             {
-                rowData += reader[i].ToString() + " ";
+                // Iterate over the result and create UI Text for each row
+                while (reader.Read())
+                {
+                    string itemName = reader[0].ToString();  // This is now the 0th index since we aren't retrieving id
+                    int quantity = Convert.ToInt32(reader[1]); // This is now the 1st index
+
+                    string displayText = $"{itemName}, {quantity} Qty.";
+                    // Instantiate a new text object inside the content panel
+                    TMP_Text newItem = Instantiate(itemTemplate, contentPanel);
+                    newItem.text = displayText; // shows the id + Item name in db
+                    newItem.gameObject.SetActive(true);
+                }
             }
-            Debug.Log(rowData);
         }
+    }
 
-        reader.Close();
-    
-        /*
-         * 
-         * 
-         */
-        /*using (var command = _connection.CreateCommand())
+    private void ClearContentPanel()
+    {
+        foreach (Transform child in contentPanel)
         {
-            command.CommandText = "SELECT * FROM sqlite_master WHERE type='table' AND name='Location' ;";
-            object result = command.ExecuteScalar();
+            Destroy(child.gameObject);
+        }
+    }
 
-            if (result != null)
-            {
-                // The table exists
-                Debug.Log("Item table exists.");
-            }
+    //Insert using DTO's from created  namespace
+    public void InsertItem(ItemDTO item)
+    {
+        using (IDbCommand command = _connection.CreateCommand())
+        {
+            command.CommandText = "INSERT INTO Item (ItemName, Quantity, StorageLocation, DateAdded, Expiry, PackSizeID) VALUES (@itemName, @quantity, @storageLocation, @dateAdded, @expiry, @packSizeID);";
+
+            // Add parameters
+            command.Parameters.Add(new SqliteParameter("@itemName", item.ItemName));
+            command.Parameters.Add(new SqliteParameter("@quantity", item.Quantity));
+            command.Parameters.Add(new SqliteParameter("@storageLocation", item.StorageLocation));
+            command.Parameters.Add(new SqliteParameter("@dateAdded", item.DateAdded));
+
+            // Check if Expiry is provided
+            if (!string.IsNullOrEmpty(item.Expiry))
+                command.Parameters.Add(new SqliteParameter("@expiry", item.Expiry));
             else
-            {
-                // The table does not exist
-                Debug.Log("Item table does not exist.");
-            }
-        }*/
+                command.Parameters.Add(new SqliteParameter("@expiry", DBNull.Value)); // If expiry is null or empty, insert DBNull.
 
+            command.Parameters.Add(new SqliteParameter("@packSizeID", item.PackSizeID));
+
+            // Execute the command
+            command.ExecuteNonQuery();
+        }
+    }
+
+    public IDbCommand GetCommand()
+    {
+        return _connection.CreateCommand();
+    }
+
+    public int InsertPackSize(PackSizeDTO packSize)
+    {
+        using (IDbCommand command = _connection.CreateCommand())
+        {
+            command.CommandText = "INSERT INTO PackSize (Unit, PackSize) VALUES (@unit, @packSize);";
+
+            // Add parameters
+            command.Parameters.Add(new SqliteParameter("@unit", packSize.Unit));
+            command.Parameters.Add(new SqliteParameter("@packSize", packSize.PackSize));
+
+            // Execute the command
+            command.ExecuteNonQuery();
+
+            // Retrieve the ID of the inserted PackSize (useful for when you need to insert into Item table)
+            command.CommandText = "SELECT last_insert_rowid()";
+            return Convert.ToInt32(command.ExecuteScalar());
+        }
     }
 
 
-    
 
-    /*
-     * SetDatabaseName()
-     * For rebuilding db purposes, in the event that file is corrupted(?).
-     */
+    //Concept for mutiple databases in the future
     public void SetDatabaseName(string name)
     {
-        _databaseName = name; 
+        _databaseName = name;
     }
 
-
- 
+    
+    private void OnDisable()
+    {
+        _connection?.Close();
+    }
 
 
 }

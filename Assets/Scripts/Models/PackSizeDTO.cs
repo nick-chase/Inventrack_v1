@@ -1,18 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using System;
 
-public class PackSize : MonoBehaviour
+namespace InventoryDTOs
 {
-    // Start is called before the first frame update
-    void Start()
+    public class PackSizeDTO
     {
-        
+        public int Id { get; set; } // Corresponds to the "id" column in your table.
+        public string Unit { get; set; } // Corresponds to the "Unit" column in your table.
+        public int PackSize { get; set; } // Corresponds to the "PackSize" column in your table.
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

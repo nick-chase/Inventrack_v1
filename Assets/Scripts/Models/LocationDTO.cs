@@ -1,18 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using System;
 
-public class Location : MonoBehaviour
+namespace InventoryDTOs
 {
-    // Start is called before the first frame update
-    void Start()
+    public class LocationDTO
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        public int Id { get; set; } // This represents the primary key "id"
+        public string LocationName { get; set; } // This represents the "LocationName"
     }
 }
+
