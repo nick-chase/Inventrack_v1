@@ -1,6 +1,5 @@
 # Inventrtack
 
-Inventory Management Application
 The Inventory Management Application is a tool that aids businesses in efficiently tracking and managing their inventory. Users benefit from an intuitive interface for adding, updating, and searching for inventory items based on various criteria such as locations and keywords.
 
 __Features__  
